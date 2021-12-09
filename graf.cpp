@@ -10,8 +10,8 @@ using namespace std;
 
 const int inf = INT_MAX;
 
-ifstream fin("bellmanford.in");
-ofstream fout("bellmanford.out");
+ifstream fin("darb.in");
+ofstream fout("darb.out");
 
 class Graf{
 
@@ -20,8 +20,8 @@ class Graf{
         bool ponderat;
         int nrNoduri;
         int nrMuchii;
-        vector<vector<int>> listaAdiacenta;
-        vector<pair<int, pair<int, int>>> listaMuchii;
+        vector<vector<int>> listaAdiacenta; //neponderat
+        vector<pair<int, pair<int, int>>> listaMuchii; //ponderat (forma: <cost, <nod1, nod2>>)
         vector<int> topologie;
 
         void bfs(vector<int>& distante, vector<bool>& vizitat, int nodStart){
@@ -166,7 +166,7 @@ class Graf{
         }
 
     public:
-        Graf(int nrNod, int nrMuc, bool esteOrientat, bool estePonderat){
+        Graf(int nrNod = 0, int nrMuc = 0, bool esteOrientat = false, bool estePonderat = false){
             nrNoduri = nrNod;
             nrMuchii = nrMuc;
             orientat = esteOrientat;
@@ -440,14 +440,47 @@ class Graf{
                     fout << distanta[i] << " ";
         }
 
+        vector<vector<int>> royFloyd(vector<vector<int>> &matrice);
+        int diametruArbore();
+
 };
 
+vector<vector<int>> Graf::royFloyd(vector<vector<int>> &matrice){
+    vector<vector<int>> dist = matrice;
+    for (int i = 1; i <= nrNoduri; i++)
+        for (int j = 1; j <= nrNoduri; j++)
+            if (matrice[i][j] == 0 && i != j)
+                dist[i][j] = 1001;  
+    for (int i = 1; i <= nrNoduri; i++)
+        for (int j = 1; j <= nrNoduri; j++)
+            for (int k = 1; k <= nrNoduri; k++)
+                if (dist[j][k] > dist[j][i] + dist[i][k])
+                    dist[j][k] = dist[j][i] + dist[i][k];
+    return dist;
+}
+
+int Graf::diametruArbore(){
+    vector<int> dist = distanteMinime(0);
+    int maxDiametru = -1, lastNode;
+    for (int i = 0; i < nrNoduri; i++)
+        if (dist[i] > maxDiametru) {
+            //maxDiametru = dist[i];
+            lastNode = i;
+        }
+    dist = distanteMinime(lastNode);
+    maxDiametru = -1;
+    for (int i = 0; i < nrNoduri; i++)
+        if (dist[i] > maxDiametru)
+            maxDiametru = dist[i];
+    return maxDiametru;
+}
+
 int main(){
-    int n, m;
-    fin>>n>>m;
-    Graf graf(n,m,true,true);
-    graf.setareGraf();
-    graf.bellmanFord();
+    int n;
+    fin >> n;
+    Graf g(n, n-1, false, false);
+    g.setareGraf();
+    fout << g.diametruArbore() + 1;
     fin.close();
     fout.close();
     return 0;
